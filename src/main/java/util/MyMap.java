@@ -98,6 +98,7 @@ public class MyMap<K, V> implements Map<K, V> {
         if (root.key.equals(key)) {
             V oldValue = root.value;
             root = root.next;
+            size--;
             return oldValue;
         }
         Entry<K, V> entry = root;
@@ -105,6 +106,7 @@ public class MyMap<K, V> implements Map<K, V> {
             if (entry.next.key.equals(key)) {
                 Entry<K, V> oldEntry = entry.next;
                 entry.next = oldEntry.next;
+                size--;
                 return oldEntry.value;
             }
         }
