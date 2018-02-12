@@ -7,6 +7,7 @@ public class MyMap<K, V> implements Map<K, V> {
     private Entry<K, V> root;
 
     public MyMap() {
+        // TODO Constructor implementation
     }
 
     @Override
@@ -38,6 +39,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public int hashCode() {
+        // TODO
         return super.hashCode();
     }
 
@@ -48,6 +50,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public String toString() {
+        // TODO
         return super.toString();
     }
 
@@ -91,19 +94,28 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(Object key) throws ClassCastException, NullPointerException {
-
+        // FIXME
+        if (root.key.equals(key)) {
+            V oldValue = root.value;
+            root = root.next;
+            return oldValue;
+        }
         Entry<K, V> entry = root;
-        while (entry != null) {
-            if (entry.key.equals(key)) {
-                //TODO
+        while (entry.next != null) {
+            if (entry.next.key.equals(key)) {
+                Entry<K, V> oldEntry = entry.next;
+                entry.next = oldEntry.next;
+                return oldEntry.value;
             }
         }
         return null;
     }
 
     @Override
-    public void putAll(Map m) throws ClassCastException, NullPointerException {
-
+    public void putAll(Map<? extends K, ? extends V> m) throws ClassCastException, NullPointerException {
+        if (this != m) {
+            m.forEach(this::put);
+        }
     }
 
     @Override
@@ -174,6 +186,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public int hashCode() {
+            // TODO
             return super.hashCode();
         }
 
