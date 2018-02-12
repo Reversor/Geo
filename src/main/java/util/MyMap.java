@@ -32,19 +32,37 @@ public class MyMap<K, V> implements Map<K, V> {
                 return true;
             }
             entry = entry.next;
-        } while (entry.next != null);
+        } while (entry != null);
         return false;
     }
 
     @Override
-    public V get(Object key) {
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return this == obj || obj instanceof Map && entrySet().equals(((Map) obj).entrySet());
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
+    @Override
+    public V get(Object key) throws ClassCastException, NullPointerException {
+        if (root == null) {
+            return null;
+        }
         Entry<K, V> entry = root;
-        do {
+        while (entry != null) {
             if (entry.getKey().equals(key)) {
                 return entry.getValue();
             }
             entry = entry.next;
-        } while (entry.next != null);
+        }
         return null;
     }
 
@@ -72,13 +90,20 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public V remove(Object key) {
+    public V remove(Object key) throws ClassCastException, NullPointerException {
+
+        Entry<K, V> entry = root;
+        while (entry != null) {
+            if (entry.key.equals(key)) {
+                //TODO
+            }
+        }
         return null;
     }
 
     @Override
     public void putAll(Map m) throws ClassCastException, NullPointerException {
-//        entrySet.addAll((Set<Map.Entry<K, V>>) m.entrySet());
+
     }
 
     @Override
@@ -91,9 +116,10 @@ public class MyMap<K, V> implements Map<K, V> {
     public Set<K> keySet() {
         Set<K> keys = new HashSet<>();
         Entry<K, V> entry = root;
-        do {
+        while (entry != null) {
             keys.add(entry.key);
-        } while (entry.next != null);
+            entry = entry.next;
+        }
         return keys;
     }
 
@@ -101,15 +127,22 @@ public class MyMap<K, V> implements Map<K, V> {
     public Collection<V> values() {
         List<V> values = new ArrayList<>();
         Entry<K, V> entry = root;
-        do {
-            values.add(entry.value  );
-        } while (entry.next != null);
+        while (entry != null) {
+            values.add(entry.value);
+            entry = entry.next;
+        }
         return values;
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return null;
+        Set<Map.Entry<K, V>> entries = new HashSet<>();
+        Entry<K, V> entry = root;
+        while (entry != null) {
+            entries.add(entry);
+            entry = entry.next;
+        }
+        return entries;
     }
 
     private class Entry<K, V> implements Map.Entry<K, V> {
@@ -145,8 +178,14 @@ public class MyMap<K, V> implements Map<K, V> {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            return super.equals(obj);
+        public String toString() {
+            return "{ " + key + ": " + value + " }";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return this == o || o instanceof Entry && key == ((Entry) o).getKey() && value == ((Entry) o).getValue();
         }
     }
+
 }
