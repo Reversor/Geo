@@ -6,15 +6,20 @@ import util.MyMap;
 import java.util.Map;
 
 public class MapTest extends Assert {
-    private Map map;
+    private Map<Integer, String> map;
+
     @Before
     public void init() {
-        map = new MyMap<Integer, String>(10);
+        map = new MyMap<>();
         assertNotNull(map);
+        map.put(1, "Один");
+        map.put(2, "Два");
+
     }
 
     @Test
-    public void put() {
-        map.put(1, "Один");
+    public void get() {
+        String value = map.get(2);
+        assertNotNull(value);
     }
 }
