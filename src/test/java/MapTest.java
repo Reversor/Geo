@@ -16,18 +16,18 @@ public class MapTest extends Assert {
     public void init() {
         map = new MyMap<>();
         map.put(1, "Один");
-//        map.put(2, "Два");
-//        map.put(5, "пять");
+        map.put(2, "Два");
+        map.put(5, "пять");
     }
 
     @Test
     public void put() {
-        assertEquals(1, map.size());
+        assertEquals(3, map.size());
         assertEquals("Один", map.put(1, "Семь"));
-        assertEquals(1, map.size());
-        map.put(2, "Три");
-        assertEquals(2, map.size());
-        assertEquals("Три", map.get(2));
+        assertEquals(3, map.size());
+        map.put(4, "Три");
+        assertEquals(4, map.size());
+        assertEquals("Три", map.get(4));
     }
 
     @Test
@@ -37,6 +37,12 @@ public class MapTest extends Assert {
     }
 
     @Test
+    public void remove() {
+
+    }
+
+    @Test
+    @Ignore
     public void forEach() {
         //TODO
     }

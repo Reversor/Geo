@@ -1,13 +1,16 @@
 package util;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class MyMap<K, V> implements Map<K, V> {
     private int size = 0;
     private Entry<K, V> root;
 
+    private EntrySet entrySet;
+
     public MyMap() {
-        // TODO Constructor implementation
+        // TODO: Constructor implementation
     }
 
     @Override
@@ -69,34 +72,32 @@ public class MyMap<K, V> implements Map<K, V> {
         return null;
     }
 
-    @Override
-    public V put(Object key, Object value) throws ClassCastException, NullPointerException {
-        K newKey = (K) key;
-        V newValue = (V) value;
-        if (root == null) {
-            root = new Entry<K, V>(newKey, newValue);
-            size = 1;
-        }
-        if (root.key.equals(key)) {
-            return  replaceValue(root, newValue);
-        } else {
-            Entry<K,V> entry = root;
-            while (entry.next != null) {
-                if (entry.key.equals(key)) {
-                    return replaceValue(entry, newValue);
-                }
-                entry = entry.next;
-            }
-            entry.next = new Entry<>(newKey, newValue);
-            size++;
-        }
-        return null;
-    }
-
     private V replaceValue(Map.Entry<K, V> entry, V value) {
         V oldValue = entry.getValue();
         entry.setValue(value);
         return oldValue;
+    }
+
+    @Override
+    public V put(K key, V value) throws NullPointerException {
+        if (root == null) {
+            root = new Entry<>(key, value);
+            size = 1;
+        }
+        if (root.key.equals(key)) {
+            return replaceValue(root, value);
+        } else {
+            Entry<K, V> entry = root;
+            while (entry.next != null) {
+                if (entry.key.equals(key)) {
+                    return replaceValue(entry, value);
+                }
+                entry = entry.next;
+            }
+            entry.next = new Entry<>(key, value);
+            size++;
+        }
+        return null;
     }
 
     @Override
@@ -135,61 +136,115 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        //fixme
-        Set<K> keys = new HashSet<>();
-        Entry<K, V> entry = root;
-        while (entry != null) {
-            keys.add(entry.key);
-            entry = entry.next;
-        }
-        return keys;
+        // FIXME
+        return Collections.emptySet();
     }
 
     @Override
     public Collection<V> values() {
-        //fixme
-        List<V> values = new ArrayList<>();
-        Entry<K, V> entry = root;
-        while (entry != null) {
-            values.add(entry.value);
-            entry = entry.next;
-        }
-        return values;
+        // FIXME
+        return Collections.emptyList();
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        Set<Map.Entry<K, V>> entries = new HashSet<>();
-        Entry<K, V> entry = root;
-        while (entry != null) {
-            entries.add(entry);
-            entry = entry.next;
-        }
-        return entries;
+        return entrySet;
     }
 
-    private class EntryIterator {
-        Entry<K,V> current;
-        Entry<K,V> next;
-        int index;
-
-        EntryIterator() {
-            current = next = null;
-            index = 0;
+    final class Values extends AbstractCollection<V> {
+        public final int size() {
+            return size;
         }
 
-        public boolean hasNext() {
+        public final void clear() {
+            MyMap.this.clear();
+        }
+
+        public final Iterator<V> iterator() {
+            return new MyMap.ValueIterator();
+        }
+
+        public final boolean contains(Object o) {
+            return containsValue(o);
+        }
+
+        public final Spliterator<V> spliterator() {
+            return null;
+        }
+
+        public final void forEach(Consumer<? super V> action) {
+            // TODO
+        }
+    }
+
+    class MySpliterator<K,V> {
+
+    }
+
+    class EntrySpliterator<K,V> extends MySpliterator implements Spliterator<Map.Entry<K,V>> {
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
             return false;
         }
 
-        public Object next() {
+        @Override
+        public Spliterator<Map.Entry<K, V>> trySplit() {
             return null;
+        }
+
+        @Override
+        public long estimateSize() {
+            return 0;
+        }
+
+        @Override
+        public int characteristics() {
+            return 0;
         }
     }
 
+    abstract class MyIterator implements Iterator<Map.Entry<K, V>>{
+        Entry<K,V> current;
+        Entry<K,V> next;
+        Entry<K,V> previous;
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public Map.Entry<K, V> next() {
+            return next;
+        }
+
+        @Override
+        public void remove() {
+            if (previous != null) {
+                current = null;
+            }
+            if (next == null) {
+                current.next = null;
+            }
+        }
+
+    }
+
+    private class EntryIterator extends MyIterator {
+
+    }
+
+    private class KeyIterator extends MyIterator {
+
+    }
+
+    private class ValueIterator extends MyIterator {
+
+    }
 
     private class KeySet extends AbstractSet<K> {
-
+        // TODO
         @Override
         public Iterator<K> iterator() {
             return null;
@@ -202,7 +257,7 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     private class ValueSet extends AbstractSet<V> {
-
+        // TODO
         @Override
         public Iterator<V> iterator() {
             return null;
@@ -214,11 +269,11 @@ public class MyMap<K, V> implements Map<K, V> {
         }
     }
 
-    private class EntrySet extends AbstractSet<Map.Entry<K,V>> {
-
+    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        // TODO
         @Override
         public Iterator<Map.Entry<K, V>> iterator() {
-            return null;
+            return new EntryIterator();
         }
 
         @Override
@@ -256,8 +311,9 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public int hashCode() {
-            // TODO
-            return super.hashCode();
+            int keyHash = key.hashCode();
+            int valueHash =value.hashCode();
+            return keyHash ^ valueHash;
         }
 
         @Override
