@@ -66,17 +66,15 @@ public class MapTest extends Assert {
     @Test
     @Ignore
     public void values() {
-        List<String> testValues = new ArrayList<>();
-        testValues.add("Один");
-        testValues.add("Два");
-        testValues.add("пять");
-        assertEquals(testValues, map.values());
+        assertNotNull(map.values());
     }
 
-    @Ignore
     @Test
+    @Ignore
     public void entrySet() {
         assertNotNull(map.entrySet());
+        assertEquals(3, map.entrySet().size());
+//        map.entrySet().remove();
         LOG.info(map.entrySet().toString());
     }
 }

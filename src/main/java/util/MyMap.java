@@ -7,8 +7,6 @@ public class MyMap<K, V> implements Map<K, V> {
     private int size = 0;
     private Entry<K, V> root;
 
-    private EntrySet entrySet;
-
     public MyMap() {
         // TODO: Constructor implementation
     }
@@ -88,8 +86,8 @@ public class MyMap<K, V> implements Map<K, V> {
         if (root.key.equals(key)) {
             return replaceValue(root, value);
         } else {
-            Entry<K,V> previousEntry = root;
-            Entry<K,V> currentEntry = root.next;
+            Entry<K, V> previousEntry = root;
+            Entry<K, V> currentEntry = root.next;
             while (currentEntry != null) {
                 if (currentEntry.key.equals(key)) {
                     return replaceValue(currentEntry, value);
@@ -104,8 +102,7 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public V remove(Object key) throws ClassCastException, NullPointerException {
-        // FIXME
+    public V remove(Object key) throws ClassCastException {
         if (root.key.equals(key)) {
             V oldValue = root.value;
             root = root.next;
@@ -141,51 +138,40 @@ public class MyMap<K, V> implements Map<K, V> {
     @Override
     public Set<K> keySet() {
         // FIXME
-        return Collections.emptySet();
+        return new KeySet();
     }
 
     @Override
     public Collection<V> values() {
         // FIXME
-        return Collections.emptyList();
+        return new Values();
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return entrySet;
+        return new EntrySet();
     }
 
-    final class Values extends AbstractCollection<V> {
-        public final int size() {
-            return size;
+    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        // TODO
+        public Iterator<Map.Entry<K, V>> iterator() {
+            return new EntryIterator();
         }
 
-        public final void clear() {
-            MyMap.this.clear();
+        public int size() {
+            return MyMap.this.size;
         }
 
-        public final Iterator<V> iterator() {
-            return new MyMap.ValueIterator();
-        }
-
-        public final boolean contains(Object o) {
-            return containsValue(o);
-        }
-
-        public final Spliterator<V> spliterator() {
-            return null;
-        }
-
-        public final void forEach(Consumer<? super V> action) {
-            // TODO
+        public boolean remove(Object o) {
+            return MyMap.this.remove(o) != null;
         }
     }
 
-    class MySpliterator<K,V> {
+    class MySpliterator<K, V> {
 
     }
 
-    class EntrySpliterator<K,V> extends MySpliterator implements Spliterator<Map.Entry<K,V>> {
+    class EntrySpliterator<K, V> extends MySpliterator implements Spliterator<Map.Entry<K, V>> {
 
         @Override
         public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
@@ -208,81 +194,127 @@ public class MyMap<K, V> implements Map<K, V> {
         }
     }
 
-    abstract class MyIterator implements Iterator<Map.Entry<K, V>>{
-        Entry<K,V> current;
-        Entry<K,V> next;
-        Entry<K,V> previous;
+    abstract class MyIterator<T> implements Iterator<T> {
+        // FIXME: Игнорирует первый элемент
+        Entry<K, V> current;
+        Entry<K, V> next;
 
-        @Override
+        MyIterator(Entry<K, V> first) {
+            next = first;
+        }
+
         public boolean hasNext() {
             return next != null;
         }
 
+        Map.Entry<K, V> nextEntry() {
+            if (hasNext()) {
+                current = next;
+                next = next.next;
+                return current;
+            }
+            throw new NoSuchElementException();
+        }
+
+        public void remove() {
+            MyMap.this.remove(current);
+        }
+    }
+
+    class EntryIterator extends MyIterator<Map.Entry<K, V>> {
+        EntryIterator() {
+            super(root);
+        }
+
         @Override
         public Map.Entry<K, V> next() {
-            return next;
+            return nextEntry();
+        }
+    }
+
+    class KeyIterator extends MyIterator<K> {
+        KeyIterator() {
+            super(root);
+        }
+
+        public K next() {
+            return nextEntry().getKey();
+        }
+    }
+
+    class ValueIterator extends MyIterator<V> {
+        ValueIterator() {
+            super(root);
         }
 
         @Override
-        public void remove() {
-            if (previous != null) {
-                current = null;
-            }
-            if (next == null) {
-                current.next = null;
-            }
+        public V next() {
+            return nextEntry().getValue();
         }
-
-    }
-
-    private class EntryIterator extends MyIterator {
-
-    }
-
-    private class KeyIterator extends MyIterator {
-
-    }
-
-    private class ValueIterator extends MyIterator {
-
     }
 
     private class KeySet extends AbstractSet<K> {
-        // TODO
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            // TODO
+            return false;
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return MyMap.this.remove(o) != null;
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            c.forEach( e -> {
+
+            });
+            return super.retainAll(c);
+        }
+
+        @Override
+        public void clear() {
+            super.clear();
+        }
+
         @Override
         public Iterator<K> iterator() {
+            return new KeyIterator();
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+    }
+
+    final class Values extends AbstractCollection<V> {
+        public final int size() {
+            return size;
+        }
+
+        public final void clear() {
+            MyMap.this.clear();
+        }
+
+        public final Iterator<V> iterator() {
+            return new ValueIterator();
+        }
+
+        public final boolean contains(Object o) {
+            return containsValue(o);
+        }
+
+        public final Spliterator<V> spliterator() {
+            // TODO
             return null;
         }
 
-        @Override
-        public int size() {
-            return 0;
-        }
-    }
-
-    private class ValueSet extends AbstractSet<V> {
-        // TODO
-        @Override
-        public Iterator<V> iterator() {
-            return null;
-        }
-
-        @Override
-        public int size() {
-            return 0;
-        }
-    }
-
-    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
-        // TODO
-        @Override
-        public Iterator<Map.Entry<K, V>> iterator() {
-            return new EntryIterator();
-        }
-
-        @Override
-        public int size() {
-            return 0;
+        public final void forEach(Consumer<? super V> action) {
+            // TODO
         }
     }
 
@@ -316,7 +348,7 @@ public class MyMap<K, V> implements Map<K, V> {
         @Override
         public int hashCode() {
             int keyHash = key.hashCode();
-            int valueHash =value.hashCode();
+            int valueHash = value.hashCode();
             return keyHash ^ valueHash;
         }
 
