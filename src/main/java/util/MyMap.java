@@ -80,21 +80,24 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) throws NullPointerException {
-        if (root == null) {
+        if (isEmpty()) {
             root = new Entry<>(key, value);
             size = 1;
+            return null;
         }
         if (root.key.equals(key)) {
             return replaceValue(root, value);
         } else {
-            Entry<K, V> entry = root;
-            while (entry.next != null) {
-                if (entry.key.equals(key)) {
-                    return replaceValue(entry, value);
+            Entry<K,V> previousEntry = root;
+            Entry<K,V> currentEntry = root.next;
+            while (currentEntry != null) {
+                if (currentEntry.key.equals(key)) {
+                    return replaceValue(currentEntry, value);
                 }
-                entry = entry.next;
+                previousEntry = currentEntry;
+                currentEntry = currentEntry.next;
             }
-            entry.next = new Entry<>(key, value);
+            previousEntry.next = new Entry<>(key, value);
             size++;
         }
         return null;
@@ -109,14 +112,15 @@ public class MyMap<K, V> implements Map<K, V> {
             size--;
             return oldValue;
         }
-        Entry<K, V> entry = root;
-        while (entry.next != null) {
-            if (entry.next.key.equals(key)) {
-                Entry<K, V> oldEntry = entry.next;
-                entry.next = oldEntry.next;
+        Entry<K, V> previousEntry = root;
+        Entry<K, V> currentEntry = root.next;
+        while (currentEntry != null) {
+            if (currentEntry.key.equals(key)) {
+                previousEntry.next = currentEntry.next;
                 size--;
-                return oldEntry.value;
+                return currentEntry.value;
             }
+            currentEntry = currentEntry.next;
         }
         return null;
     }
@@ -323,7 +327,9 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean equals(Object o) {
-            return this == o || o instanceof Entry && key == ((Entry) o).getKey() && value == ((Entry) o).getValue();
+            return this == o || o instanceof Entry
+                    && key.equals(((Entry) o).getKey())
+                    && value.equals(((Entry) o).getValue());
         }
     }
 

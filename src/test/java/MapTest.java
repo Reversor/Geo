@@ -28,6 +28,11 @@ public class MapTest extends Assert {
         map.put(4, "Три");
         assertEquals(4, map.size());
         assertEquals("Три", map.get(4));
+        assertEquals("Три", map.put(4,"Четыре"));
+        map.clear();
+        map.put(2, "Велосипед");
+        map.put(2, "Трактор");
+        assertEquals("Трактор", map.get(2));
     }
 
     @Test
@@ -38,7 +43,8 @@ public class MapTest extends Assert {
 
     @Test
     public void remove() {
-
+        assertEquals("пять", map.remove(5));
+        assertEquals(2, map.size());
     }
 
     @Test
