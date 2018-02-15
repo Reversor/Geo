@@ -6,7 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.MyMap;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class MapTest extends Assert {
     private final Logger LOG = LoggerFactory.getLogger(this.getClass().getName());
@@ -28,7 +30,7 @@ public class MapTest extends Assert {
         map.put(4, "Три");
         assertEquals(4, map.size());
         assertEquals("Три", map.get(4));
-        assertEquals("Три", map.put(4,"Четыре"));
+        assertEquals("Три", map.put(4, "Четыре"));
         map.clear();
         map.put(2, "Велосипед");
         map.put(2, "Трактор");
@@ -47,10 +49,14 @@ public class MapTest extends Assert {
         assertEquals(2, map.size());
     }
 
-    @Test
+    @Test(timeout = 1000)
     @Ignore
     public void forEach() {
-        //TODO
+//        map.entrySet().spliterator().forEachRemaining(System.out::println);
+        map.entrySet().stream().parallel().forEach(System.out::println);
+//        map.keySet().stream().parallel().forEach(System.out::println);
+//        map.keySet().spliterator().forEachRemaining(System.out::println);
+//        map.values().spliterator().forEachRemaining(System.out::println);
     }
 
     @Test

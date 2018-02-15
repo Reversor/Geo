@@ -57,7 +57,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object key) throws ClassCastException, NullPointerException {
-        if (root == null) {
+        if (isEmpty()) {
             return null;
         }
         Entry<K, V> entry = root;
@@ -103,6 +103,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(Object key) throws ClassCastException {
+        if (isEmpty()) return null;
         if (root.key.equals(key)) {
             V oldValue = root.value;
             root = root.next;
@@ -124,9 +125,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) throws ClassCastException, NullPointerException {
-        if (this != m) {
-            m.forEach(this::put);
-        }
+        if (this != m) m.forEach(this::put);
     }
 
     @Override
@@ -137,13 +136,11 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        // FIXME
         return new KeySet();
     }
 
     @Override
     public Collection<V> values() {
-        // FIXME
         return new Values();
     }
 
@@ -152,50 +149,178 @@ public class MyMap<K, V> implements Map<K, V> {
         return new EntrySet();
     }
 
-    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
-        // TODO
-        public Iterator<Map.Entry<K, V>> iterator() {
-            return new EntryIterator();
-        }
+    static final class Entry<K, V> implements Map.Entry<K, V> {
+        final K key;
+        V value;
+        Entry<K, V> next;
 
-        public int size() {
-            return MyMap.this.size;
-        }
-
-        public boolean remove(Object o) {
-            return MyMap.this.remove(o) != null;
-        }
-    }
-
-    class MySpliterator<K, V> {
-
-    }
-
-    class EntrySpliterator<K, V> extends MySpliterator implements Spliterator<Map.Entry<K, V>> {
-
-        @Override
-        public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
-            return false;
+        Entry(K key, V value) {
+            this.key = key;
+            this.value = value;
         }
 
         @Override
-        public Spliterator<Map.Entry<K, V>> trySplit() {
-            return null;
+        public K getKey() {
+            return key;
         }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(V value) {
+            V oldValue = this.value;
+            this.value = value;
+            return oldValue;
+        }
+
+        @Override
+        public int hashCode() {
+            int keyHash = key.hashCode();
+            int valueHash = value.hashCode();
+            return keyHash ^ valueHash;
+        }
+
+        @Override
+        public String toString() {
+            return "{ " + key + ": " + value + " }";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return this == o || o instanceof Entry
+                    && key.equals(((Map.Entry) o).getKey())
+                    && value.equals(((Map.Entry) o).getValue());
+        }
+    }
+
+    abstract class MySpliterator<T> implements Spliterator<T> {
+        Entry<K, V> entry;
+        int size;
+        int position;
+
+        MySpliterator(Entry<K, V> entry) {
+            this.entry = entry;
+            this.position = 0;
+            this.size = MyMap.this.size;
+        }
+
+        MySpliterator(Entry<K, V> entry, int position, int origin) {
+            this.entry = entry;
+            this.position = position;
+            this.size = origin;
+        }
+
+        /*boolean isSplitable() {
+            return size > position;
+        }*/
 
         @Override
         public long estimateSize() {
-            return 0;
+            return size - position;
         }
 
         @Override
         public int characteristics() {
-            return 0;
+            return SIZED | SUBSIZED;
+        }
+    }
+
+    class EntrySpliterator extends MySpliterator<Map.Entry<K, V>> {
+        EntrySpliterator(Entry<K, V> entry) {
+            super(entry);
+        }
+
+        EntrySpliterator(Entry<K, V> entry, int position, int origin) {
+            super(entry, position, origin);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Map.Entry<K, V>> action) {
+            if (entry != null) {
+                action.accept(entry);
+                System.out.println(position);
+                ++position;
+                entry = entry.next;
+                return true;
+            }
+            return false;
+        }
+
+        // FIXME: something wrong here
+        @Override
+        public Spliterator<Map.Entry<K, V>> trySplit() {
+            if (size - position > 1) {
+                return new EntrySpliterator(entry, position, size / 2);
+            }
+            return null;
+        }
+    }
+
+    class KeySpliterator extends MySpliterator<K> {
+        KeySpliterator(Entry<K, V> entry) {
+            super(entry);
+        }
+
+        KeySpliterator(Entry<K, V> entry, int position, int origin) {
+            super(entry, position, origin);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super K> action) {
+            if (entry != null) {
+                action.accept(entry.key);
+                entry = entry.next;
+                return true;
+            }
+            return false;
+        }
+        @Override
+        public Spliterator<K> trySplit() {
+            /*if (super.isSplitable()) {
+                return new KeySpliterator(entry, position, size / 2);
+            }*/
+            return null;
+        }
+
+        @Override
+        public int characteristics() {
+            return super.characteristics() | DISTINCT;
+        }
+    }
+
+    class ValueSpliterator extends MySpliterator<V> {
+
+        ValueSpliterator(Entry<K, V> entry) {
+            super(entry);
+        }
+
+        ValueSpliterator(Entry<K, V> entry, int position, int origin) {
+            super(entry, position, origin);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super V> action) {
+            if (entry != null) {
+                action.accept(entry.value);
+                entry = entry.next;
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Spliterator<V> trySplit() {
+            /*if (super.isSplitable()) {
+                return new ValueSpliterator(entry, position, size / 2);
+            }*/
+            return null;
         }
     }
 
     abstract class MyIterator<T> implements Iterator<T> {
-        // FIXME: Игнорирует первый элемент
         Entry<K, V> current;
         Entry<K, V> next;
 
@@ -253,6 +378,26 @@ public class MyMap<K, V> implements Map<K, V> {
         }
     }
 
+    private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+        // TODO
+        public Iterator<Map.Entry<K, V>> iterator() {
+            return new EntryIterator();
+        }
+
+        public int size() {
+            return MyMap.this.size;
+        }
+
+        public boolean remove(Object o) {
+            return MyMap.this.remove(o) != null;
+        }
+
+        @Override
+        public Spliterator<Map.Entry<K, V>> spliterator() {
+            return new EntrySpliterator(root);
+        }
+    }
+
     private class KeySet extends AbstractSet<K> {
 
         @Override
@@ -268,9 +413,8 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean retainAll(Collection<?> c) {
-            c.forEach( e -> {
-
-            });
+            // TODO
+            c.forEach(MyMap.this::remove);
             return super.retainAll(c);
         }
 
@@ -280,13 +424,18 @@ public class MyMap<K, V> implements Map<K, V> {
         }
 
         @Override
+        public Spliterator<K> spliterator() {
+            return new KeySpliterator(root);
+        }
+
+        @Override
         public Iterator<K> iterator() {
             return new KeyIterator();
         }
 
         @Override
         public int size() {
-            return 0;
+            return size;
         }
 
     }
@@ -296,72 +445,24 @@ public class MyMap<K, V> implements Map<K, V> {
             return size;
         }
 
+        @Override
         public final void clear() {
             MyMap.this.clear();
         }
 
+        @Override
         public final Iterator<V> iterator() {
             return new ValueIterator();
         }
 
+        @Override
         public final boolean contains(Object o) {
             return containsValue(o);
         }
 
+        @Override
         public final Spliterator<V> spliterator() {
-            // TODO
-            return null;
-        }
-
-        public final void forEach(Consumer<? super V> action) {
-            // TODO
-        }
-    }
-
-    private class Entry<K, V> implements Map.Entry<K, V> {
-        final K key;
-        V value;
-        Entry<K, V> next;
-
-        Entry(K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        @Override
-        public K getKey() {
-            return key;
-        }
-
-        @Override
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public V setValue(V value) {
-            V oldValue = this.value;
-            this.value = value;
-            return oldValue;
-        }
-
-        @Override
-        public int hashCode() {
-            int keyHash = key.hashCode();
-            int valueHash = value.hashCode();
-            return keyHash ^ valueHash;
-        }
-
-        @Override
-        public String toString() {
-            return "{ " + key + ": " + value + " }";
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return this == o || o instanceof Entry
-                    && key.equals(((Entry) o).getKey())
-                    && value.equals(((Entry) o).getValue());
+            return new ValueSpliterator(root);
         }
     }
 
