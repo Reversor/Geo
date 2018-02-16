@@ -19,7 +19,17 @@ public class MapTest extends Assert {
         map = new MyMap<>();
         map.put(1, "Один");
         map.put(2, "Два");
+        map.put(10, "Синхрофазатрон");
         map.put(5, "пять");
+        map.put(42, "ответ");
+    }
+
+    @Test
+    public void array() {
+        int[] arr = new int[20];
+        for (Integer i : arr) {
+            System.out.println(i);
+        }
     }
 
     @Test
@@ -41,6 +51,7 @@ public class MapTest extends Assert {
     public void get() {
         assertNotNull(map.get(1));
         assertNull(map.get(3));
+        System.out.println(map.get(42));
     }
 
     @Test
@@ -53,7 +64,7 @@ public class MapTest extends Assert {
     @Ignore
     public void forEach() {
 //        map.entrySet().spliterator().forEachRemaining(System.out::println);
-        map.entrySet().stream().parallel().forEach(System.out::println);
+        map.forEach((k, v) -> System.out.println(k + " " + v));
 //        map.keySet().stream().parallel().forEach(System.out::println);
 //        map.keySet().spliterator().forEachRemaining(System.out::println);
 //        map.values().spliterator().forEachRemaining(System.out::println);
@@ -72,7 +83,8 @@ public class MapTest extends Assert {
     @Test
     @Ignore
     public void values() {
-        assertNotNull(map.values());
+        System.out.println(map.toString());
+//        assertNotNull(map.values());
     }
 
     @Test
