@@ -9,6 +9,10 @@ import util.MyMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 public class MapTest extends Assert {
     private final Logger LOG = LoggerFactory.getLogger(this.getClass().getName());
@@ -16,7 +20,7 @@ public class MapTest extends Assert {
 
     @Before
     public void init() {
-        map = new MyMap<>();
+        map = new MyMap<>(true);
         map.put(1, "Один");
         map.put(2, "Два");
         map.put(10, "Синхрофазатрон");
@@ -34,17 +38,15 @@ public class MapTest extends Assert {
 
     @Test
     public void put() {
-        assertEquals(3, map.size());
-        assertEquals("Один", map.put(1, "Семь"));
-        assertEquals(3, map.size());
         map.put(4, "Три");
-        assertEquals(4, map.size());
         assertEquals("Три", map.get(4));
         assertEquals("Три", map.put(4, "Четыре"));
-        map.clear();
         map.put(2, "Велосипед");
         map.put(2, "Трактор");
         assertEquals("Трактор", map.get(2));
+        System.out.println(((MyMap)map).find(10));
+        System.out.println(map);
+
     }
 
     @Test
@@ -55,35 +57,53 @@ public class MapTest extends Assert {
     }
 
     @Test
-    public void remove() {
-        assertEquals("пять", map.remove(5));
-        assertEquals(2, map.size());
+    public void hashCodeTest() {
+        Map<String, String> stringMap = new MyMap<>(true);
+        stringMap.put("Синий", "Человек");
+        stringMap.put("Желтый", "Человек");
+        stringMap.put("Красный", "Паук");
+        stringMap.put("Фиолетовый", "Дровосек");
+        stringMap.put("Дровосек", "Фиолетовый");
+        System.out.println(stringMap);
+        ((MyMap)stringMap).sort();
+        System.out.println("Желтый".hashCode());
+        System.out.println(((MyMap)stringMap).find("Желтый"));
+        for (Object entry : stringMap.keySet()) {
+            System.out.print(entry.hashCode() + " ");
+        }
+        System.out.println(stringMap);
     }
 
-    @Test(timeout = 1000)
+    @Test
+    public void remove() {
+        assertEquals("пять", map.remove(5));
+        assertEquals(4, map.size());
+        map.remove(42);
+        map.remove(2);
+        map.remove(1);
+        System.out.println(map);
+        map.remove(10);
+        assertEquals(0, map.size());
+        System.out.println(map);
+    }
+
+    @Test(timeout = 100)
     @Ignore
     public void forEach() {
-//        map.entrySet().spliterator().forEachRemaining(System.out::println);
-        map.forEach((k, v) -> System.out.println(k + " " + v));
-//        map.keySet().stream().parallel().forEach(System.out::println);
-//        map.keySet().spliterator().forEachRemaining(System.out::println);
-//        map.values().spliterator().forEachRemaining(System.out::println);
+        map.entrySet().stream().parallel().forEach(System.out::println);
     }
 
     @Test
     @Ignore
     public void keySet() {
-        Set<Integer> testKeys = new HashSet<>();
-        testKeys.add(1);
-        testKeys.add(2);
-        testKeys.add(5);
-        assertEquals(testKeys, map.keySet());
+        assertNotNull(map.keySet());
+        System.out.println(map.keySet());
     }
 
     @Test
     @Ignore
     public void values() {
-        System.out.println(map.toString());
+        System.out.println(map.values().toString());
 //        assertNotNull(map.values());
     }
 
@@ -91,8 +111,20 @@ public class MapTest extends Assert {
     @Ignore
     public void entrySet() {
         assertNotNull(map.entrySet());
-        assertEquals(3, map.entrySet().size());
-//        map.entrySet().remove();
         LOG.info(map.entrySet().toString());
+    }
+
+    @Test
+    @Ignore
+    public void someTest() {
+        UnaryOperator<Integer> l = (k) -> {
+            System.out.println(k);
+            return 4+k;
+        };
+        UnaryOperator<Integer> i = (k) -> {
+            System.out.println(k);
+            return 5*k;
+        };
+        System.out.println(i.andThen(l).apply(5));
     }
 }

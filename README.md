@@ -2,7 +2,7 @@
 Some description here
 # Build
 In command line:\
-gradlew build
+`gradlew build`
 # Test
 In command line:\
-gradlew test
+`gradlew test`
