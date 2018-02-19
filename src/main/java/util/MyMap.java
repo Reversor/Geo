@@ -14,6 +14,10 @@ public class MyMap<K, V> implements Map<K, V> {
     private boolean sortable;
     private boolean sorted;
 
+    private EntrySet entrySet;
+    private KeySet keySet;
+    private Values values;
+
     @SuppressWarnings("unchecked")
     public MyMap() {
         this(false);
@@ -168,17 +172,23 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        return new KeySet();
+        return keySet == null
+                ? keySet = new KeySet()
+                : keySet;
     }
 
     @Override
     public Collection<V> values() {
-        return new Values();
+        return keySet == null
+                ? values = new Values()
+                : values;
     }
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
-        return new EntrySet();
+        return entrySet == null
+                ? entrySet = new EntrySet()
+                : entrySet;
     }
 
     private int hashCompare(Object first, Object second) {
@@ -440,23 +450,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public final boolean remove(Object o) {
-            Iterator<V> it = iterator();
-            if (o==null) {
-                while (it.hasNext()) {
-                    if (it.next()==null) {
-                        it.remove();
-                        return true;
-                    }
-                }
-            } else {
-                while (it.hasNext()) {
-                    if (o.equals(it.next())) {
-                        it.remove();
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return super.remove(o);
         }
 
         @Override

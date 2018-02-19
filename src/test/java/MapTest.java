@@ -32,6 +32,7 @@ public class MapTest extends Assert {
         map.put(401204, "ответ");
         map.put(401211, "ответ");
         map.put(40151, "ответ");
+        map.put(7_000_000, "семьлион");
     }
 
     @Test
@@ -110,7 +111,7 @@ public class MapTest extends Assert {
     public void values() {
         System.out.println(map.values());
         Collection<String> list = map.values();
-        System.out.println(list.remove("Синхрофазатрон"));
+        System.out.println(list.remove("семьлион"));
         System.out.println(map.values());
         System.out.println(map);
 //        assertNotNull(map.values());
