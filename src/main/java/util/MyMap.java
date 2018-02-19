@@ -9,6 +9,7 @@ import static java.util.Spliterator.DISTINCT;
 public class MyMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     private final Map.Entry<K, V>[] EMPTY_ENTRIES = new Map.Entry[]{};
+
     private Map.Entry<K, V>[] entries;
     private boolean sortable;
     private boolean sorted;
@@ -111,7 +112,7 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     public int find(Object key) {
-        if (!(sorted && sortable)) sort();
+        if (!(sorted)) sort();
         int hashKey = key.hashCode();
         int low = 0;
         int high = entries.length - 1;
@@ -238,10 +239,11 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     private final class MySpliterator<T> implements Spliterator<T> {
+        private final int DEFAULT_CHARACTERISTIC = SIZED | SUBSIZED;
+
         private final int fence;
         private final int characteristic;
         private final Function<Map.Entry<K, V>, T> getter;
-        private final int DEFAULT_CHARACTERISTIC = SIZED | SUBSIZED;
         private int index;
 
         MySpliterator(Function<Map.Entry<K, V>, T> getter) {
@@ -272,10 +274,10 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public Spliterator<T> trySplit() {
-            int lo = index, mid = (lo + fence) >>> 1;
-            return (lo >= mid)
+            int mid = (index + fence) >>> 1;
+            return (index >= mid)
                     ? null
-                    : new MySpliterator<>(lo, index = mid, getter, characteristic);
+                    : new MySpliterator<>(index, index = mid, getter, characteristic);
         }
 
         @Override
@@ -301,6 +303,7 @@ public class MyMap<K, V> implements Map<K, V> {
             index = 0;
         }
 
+        @Override
         public boolean hasNext() {
             return index < MyMap.this.size();
         }
@@ -312,8 +315,9 @@ public class MyMap<K, V> implements Map<K, V> {
             throw new NoSuchElementException();
         }
 
+        @Override
         public void remove() {
-            MyMap.this.remove(MyMap.this.entries[index]);
+            MyMap.this.removeByIndex(index - 1);
         }
     }
 
@@ -367,7 +371,6 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public Spliterator<Map.Entry<K, V>> spliterator() {
-            //TODO
             return new MySpliterator<>((e) -> e, Spliterator.SIZED | Spliterator.SUBSIZED);
         }
     }
@@ -377,7 +380,7 @@ public class MyMap<K, V> implements Map<K, V> {
         @Override
         public boolean removeAll(Collection<?> c) {
             // TODO
-            return false;
+            return super.removeAll(c);
         }
 
         @Override
@@ -389,7 +392,6 @@ public class MyMap<K, V> implements Map<K, V> {
         public boolean retainAll(Collection<?> c) {
 //            c.forEach();
             // TODO
-            c.stream().filter(MyMap.this::containsKey).forEach(MyMap.this::remove);
             return super.retainAll(c);
         }
 
@@ -434,6 +436,37 @@ public class MyMap<K, V> implements Map<K, V> {
         @Override
         public final boolean contains(Object o) {
             return containsValue(o);
+        }
+
+        @Override
+        public final boolean remove(Object o) {
+            Iterator<V> it = iterator();
+            if (o==null) {
+                while (it.hasNext()) {
+                    if (it.next()==null) {
+                        it.remove();
+                        return true;
+                    }
+                }
+            } else {
+                while (it.hasNext()) {
+                    if (o.equals(it.next())) {
+                        it.remove();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            return super.removeAll(c);
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            return super.retainAll(c);
         }
 
         @Override

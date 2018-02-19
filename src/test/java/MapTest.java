@@ -6,9 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.MyMap;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -20,12 +18,20 @@ public class MapTest extends Assert {
 
     @Before
     public void init() {
-        map = new MyMap<>(true);
+        map = new MyMap<>();
         map.put(1, "Один");
         map.put(2, "Два");
         map.put(10, "Синхрофазатрон");
         map.put(5, "пять");
         map.put(42, "ответ");
+        map.put(12, "ответ");
+        map.put(25, "ответ");
+        map.put(401, "ответ");
+        map.put(140, "ответ");
+        map.put(4010, "ответ");
+        map.put(401204, "ответ");
+        map.put(401211, "ответ");
+        map.put(40151, "ответ");
     }
 
     @Test
@@ -77,17 +83,15 @@ public class MapTest extends Assert {
     @Test
     public void remove() {
         assertEquals("пять", map.remove(5));
-        assertEquals(4, map.size());
         map.remove(42);
         map.remove(2);
         map.remove(1);
         System.out.println(map);
         map.remove(10);
-        assertEquals(0, map.size());
         System.out.println(map);
     }
 
-    @Test(timeout = 100)
+    @Test(timeout = 1000)
     @Ignore
     public void forEach() {
         map.entrySet().stream().parallel().forEach(System.out::println);
@@ -97,13 +101,18 @@ public class MapTest extends Assert {
     @Ignore
     public void keySet() {
         assertNotNull(map.keySet());
+        map.keySet().remove(2);
         System.out.println(map.keySet());
     }
 
     @Test
     @Ignore
     public void values() {
-        System.out.println(map.values().toString());
+        System.out.println(map.values());
+        Collection<String> list = map.values();
+        System.out.println(list.remove("Синхрофазатрон"));
+        System.out.println(map.values());
+        System.out.println(map);
 //        assertNotNull(map.values());
     }
 
@@ -112,12 +121,17 @@ public class MapTest extends Assert {
     public void entrySet() {
         assertNotNull(map.entrySet());
         LOG.info(map.entrySet().toString());
+        Set<Map.Entry<Integer, String>> set = map.entrySet();
+        set.remove(1);
+        set.remove(2);
+        System.out.println(map);
     }
 
     @Test
     @Ignore
     public void someTest() {
-        UnaryOperator<Integer> l = (k) -> {
+        System.out.println();
+        /*UnaryOperator<Integer> l = (k) -> {
             System.out.println(k);
             return 4+k;
         };
@@ -125,6 +139,6 @@ public class MapTest extends Assert {
             System.out.println(k);
             return 5*k;
         };
-        System.out.println(i.andThen(l).apply(5));
+        System.out.println(i.andThen(l).apply(5));*/
     }
 }
