@@ -1,9 +1,8 @@
 package util;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class PersonGenerator {
     private List<String> maleName;
@@ -11,34 +10,30 @@ public class PersonGenerator {
 
 
     public PersonGenerator() {
-        maleName = Collections.unmodifiableList(
-                Stream.of(
-                        "Alexander",
-                        "Maxim",
-                        "Ivan",
-                        "Artem",
-                        "Nikita",
-                        "Dmitriy",
-                        "Egor",
-                        "Daniil",
-                        "Mihail",
-                        "Andrey"
-                ).collect(ArrayList::new, ArrayList::add, ArrayList::addAll)
-        );
-        femaleName = Collections.unmodifiableList(
-                Stream.of(
-                        "Anastasia",
-                        "Maria",
-                        "Daria",
-                        "Anna",
-                        "Elizaveta",
-                        "Victoriya",
-                        "Polina",
-                        "Ekaterina",
-                        "Sofia",
-                        "Alexandra"
-                ).collect(ArrayList::new, ArrayList::add, ArrayList::addAll)
-        );
+        maleName = Collections.unmodifiableList(Arrays.asList(
+                "Alexander",
+                "Maxim",
+                "Ivan",
+                "Artem",
+                "Nikita",
+                "Dmitriy",
+                "Egor",
+                "Daniil",
+                "Mihail",
+                "Andrey"
+        ));
+        femaleName = Collections.unmodifiableList(Arrays.asList(
+                "Anastasia",
+                "Maria",
+                "Daria",
+                "Anna",
+                "Elizaveta",
+                "Victoriya",
+                "Polina",
+                "Ekaterina",
+                "Sofia",
+                "Alexandra"
+        ));
 
     }
 
