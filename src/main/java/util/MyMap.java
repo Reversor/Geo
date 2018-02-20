@@ -17,6 +17,7 @@ public class MyMap<K, V> implements Map<K, V> {
     private EntrySet entrySet;
     private KeySet keySet;
     private Values values;
+    private Comparator<Map.Entry<K, V>> comparator;
 
     @SuppressWarnings("unchecked")
     public MyMap() {
@@ -25,13 +26,16 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @SuppressWarnings("unchecked")
     public MyMap(boolean sortable) {
+        if (sortable) {
+            comparator = new MyComparator();
+        }
         this.sortable = sortable;
         this.sorted = false;
         this.entries = new Map.Entry[]{};
     }
 
-    public void sort() {
-        Arrays.sort(entries, new KeyHashComparator());
+    private void sort() {
+        Arrays.sort(entries, comparator);
     }
 
     @Override
@@ -52,11 +56,12 @@ public class MyMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsValue(Object value) {
         if (isEmpty()) return false;
-        for (Map.Entry<K, V> entry : entries) {
-            if (entry.getValue().equals(value)) {
+        for (V v : values()) {
+            if (v.equals(value)) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -73,7 +78,6 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public String toString() {
-        // TODO
         return Arrays.toString(entries);
     }
 
@@ -81,6 +85,12 @@ public class MyMap<K, V> implements Map<K, V> {
     public V get(Object key) throws ClassCastException, NullPointerException {
         if (isEmpty()) {
             return null;
+        }
+        if (sorted) {
+            int index = findIndex(key);
+            return (index > 0)
+                    ? entries[index].getValue()
+                    : null;
         }
         for (Map.Entry<K, V> entry : entries) {
             if (entry.getKey().equals(key)) {
@@ -99,6 +109,10 @@ public class MyMap<K, V> implements Map<K, V> {
     @Override
     public V put(K key, V value) throws NullPointerException {
         if (!isEmpty()) {
+            int index = findIndex(key);
+            if (index >= 0) {
+                return replaceValue(entries[index], value);
+            }
             for (Map.Entry<K, V> entry : entries) {
                 if (entry == null) {
                     return null;
@@ -109,25 +123,35 @@ public class MyMap<K, V> implements Map<K, V> {
             }
         }
         Map.Entry<K, V> newEntry = new Entry<>(key, value);
-        entries = Arrays.copyOf(entries, entries.length + 1);
+        @SuppressWarnings("unchecked")
+        Entry<K, V>[] newEntries = new Entry[entries.length + 1];
+        System.arraycopy(entries, 0, newEntries, 0, entries.length);
+        entries = newEntries;
+//        entries = Arrays.copyOf(entries, entries.length + 1);
         entries[entries.length - 1] = newEntry;
         if (sortable) sort();
         return null;
     }
 
-    public int find(Object key) {
-        if (!(sorted)) sort();
+    private int linearSearchIndex(Object key) {
+        for (int i = 0; i < entries.length; i++) {
+            if (entries[i].getKey().equals(key)) return i;
+        }
+        return -1;
+    }
+
+    private int binarySearchIndex(Object key) {
         int hashKey = key.hashCode();
         int low = 0;
         int high = entries.length - 1;
 
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            int midVal = entries[mid].getKey().hashCode();
+            int midValue = entries[mid].getKey().hashCode();
 
-            if (midVal < hashKey)
+            if (midValue < hashKey)
                 low = mid + 1;
-            else if (midVal > hashKey)
+            else if (midValue > hashKey)
                 high = mid - 1;
             else
                 return mid;
@@ -135,21 +159,21 @@ public class MyMap<K, V> implements Map<K, V> {
         return -(low + 1);
     }
 
+    private int findIndex(Object key) {
+        return sorted
+                ? binarySearchIndex(key)
+                : linearSearchIndex(key);
+    }
+
     @Override
     public V remove(Object key) {
-        if (isEmpty()) return null;
-        // O(log n)
-        if (sorted) return removeByIndex(find(key));
-        // O(n)
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i].getKey().equals(key)) {
-                return removeByIndex(i);
-            }
-        }
-        return null;
+        return isEmpty()
+                ? null
+                : removeByIndex(findIndex(key));
     }
 
     private V removeByIndex(int index) {
+        if (index < 0) return null;
         V oldValue = entries[index].getValue();
         @SuppressWarnings("unchecked")
         Map.Entry<K, V>[] newEntries = new Map.Entry[entries.length - 1];
@@ -189,10 +213,6 @@ public class MyMap<K, V> implements Map<K, V> {
         return entrySet == null
                 ? entrySet = new EntrySet()
                 : entrySet;
-    }
-
-    private int hashCompare(Object first, Object second) {
-        return first.hashCode() - second.hashCode();
     }
 
     static final class Entry<K, V> implements Map.Entry<K, V> {
@@ -241,10 +261,14 @@ public class MyMap<K, V> implements Map<K, V> {
         }
     }
 
-    class KeyHashComparator implements Comparator<Map.Entry<K, V>> {
+    @SuppressWarnings("unchecked")
+    class MyComparator implements Comparator<Map.Entry<K, V>> {
         @Override
         public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
-            return hashCompare(o1.getKey(), o2.getKey());
+            if (o1.getKey() instanceof Comparable) {
+                return ((Comparable) o1.getKey()).compareTo(o2.getKey());
+            }
+            return o1.getKey().hashCode() - o2.getKey().hashCode();
         }
     }
 
@@ -389,7 +413,6 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean removeAll(Collection<?> c) {
-            // TODO
             return super.removeAll(c);
         }
 
@@ -400,8 +423,6 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public boolean retainAll(Collection<?> c) {
-//            c.forEach();
-            // TODO
             return super.retainAll(c);
         }
 
