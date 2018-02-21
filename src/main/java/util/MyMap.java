@@ -7,6 +7,7 @@ import java.util.function.Function;
 import static java.util.Spliterator.DISTINCT;
 
 public class MyMap<K, V> implements Map<K, V> {
+
     @SuppressWarnings("unchecked")
     private final Map.Entry<K, V>[] EMPTY_ENTRIES = new Map.Entry[]{};
 
@@ -124,11 +125,12 @@ public class MyMap<K, V> implements Map<K, V> {
         }
         Map.Entry<K, V> newEntry = new Entry<>(key, value);
         @SuppressWarnings("unchecked")
-        Entry<K, V>[] newEntries = new Entry[entries.length + 1];
+        Map.Entry<K, V>[] newEntries = new Map.Entry[entries.length + 1];
+        long time = System.nanoTime();
         System.arraycopy(entries, 0, newEntries, 0, entries.length);
         entries = newEntries;
-//        entries = Arrays.copyOf(entries, entries.length + 1);
         entries[entries.length - 1] = newEntry;
+        System.out.println(System.nanoTime() - time);
         if (sortable) sort();
         return null;
     }
