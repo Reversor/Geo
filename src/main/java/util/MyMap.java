@@ -6,47 +6,47 @@ import java.util.function.Function;
 
 import static java.util.Spliterator.DISTINCT;
 
-public class MyMap<K, V> implements Map<K, V> {
+public class MyMap<K, V> extends AbstractMap<K, V> {
+
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
+    private static final int DEFAULT_INITIAL_CAPACITY = 1 << 10;
+    private static final float DEFAULT_LOAD_FACTOR = 0.5f;
+    private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = key -> key.hashCode() * 31;
 
     @SuppressWarnings("unchecked")
-    private final Map.Entry<K, V>[] EMPTY_ENTRIES = new Map.Entry[]{};
+    private final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
 
-    private Map.Entry<K, V>[] entries;
-    private boolean sortable;
-    private boolean sorted;
+    private Entry<K, V>[] entries;
+
+    private Function<Object, Integer> hashFunction;
+
+    private float loadFactor;
+    private int capacity;
+    private int threshold;
+    private int count;
 
     private EntrySet entrySet;
     private KeySet keySet;
     private Values values;
-    private Comparator<Map.Entry<K, V>> comparator;
 
     @SuppressWarnings("unchecked")
     public MyMap() {
-        this(false);
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_HASH_FUNCTION);
     }
 
     @SuppressWarnings("unchecked")
-    public MyMap(boolean sortable) {
-        if (sortable) {
-            comparator = new MyComparator();
-        }
-        this.sortable = sortable;
-        this.sorted = false;
-        this.entries = new Map.Entry[]{};
-    }
-
-    private void sort() {
-        Arrays.sort(entries, comparator);
+    public MyMap(int capacity, float loadFactor, Function<Object, Integer> hashFunction) {
+        this.entries = new Entry[capacity];
+        this.capacity = capacity;
+        this.loadFactor = loadFactor;
+        this.threshold = (int) (capacity * loadFactor);
+        this.hashFunction = hashFunction == null ? DEFAULT_HASH_FUNCTION : hashFunction;
+        this.count = 0;
     }
 
     @Override
     public int size() {
-        return entries.length;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return entries.length == 0;
+        return count;
     }
 
     @Override
@@ -56,148 +56,112 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsValue(Object value) {
-        if (isEmpty()) return false;
-        for (V v : values()) {
-            if (v.equals(value)) {
-                return true;
-            }
-        }
+        if (!isEmpty()) return false;
+
 
         return false;
     }
 
-    @Override
-    public int hashCode() {
-        // TODO
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return this == obj || obj instanceof Map && entrySet().equals(((Map) obj).entrySet());
-    }
-
-    @Override
-    public String toString() {
-        return Arrays.toString(entries);
-    }
-
-    @Override
-    public V get(Object key) throws ClassCastException, NullPointerException {
-        if (isEmpty()) {
-            return null;
-        }
-        if (sorted) {
-            int index = findIndex(key);
-            return (index > 0)
-                    ? entries[index].getValue()
-                    : null;
-        }
-        for (Map.Entry<K, V> entry : entries) {
-            if (entry.getKey().equals(key)) {
-                return entry.getValue();
+    private Entry<K, V> getEntry(Object key) throws ClassCastException, NullPointerException {
+        Entry<K, V> entry = entries[hash(key)];
+        while (Objects.nonNull(entry)) {
+            if (entry.key.equals(key)) {
+                return entry;
             }
+            entry = entry.next;
         }
         return null;
     }
 
-    private V replaceValue(Map.Entry<K, V> entry, V value) {
-        V oldValue = entry.getValue();
-        entry.setValue(value);
-        return oldValue;
+    @Override
+    public V get(Object key) {
+        Entry<K, V> entry = getEntry(key);
+        if (entry != null) return entry.value;
+        return null;
+    }
+
+    private V replaceValue(Entry<K, V> entry, V value) {
+        // FIXME
+        return null;
     }
 
     @Override
     public V put(K key, V value) throws NullPointerException {
-        if (!isEmpty()) {
-            int index = findIndex(key);
-            if (index >= 0) {
-                return replaceValue(entries[index], value);
-            }
-            for (Map.Entry<K, V> entry : entries) {
-                if (entry == null) {
-                    return null;
-                }
-                if (entry.getKey().equals(key)) {
-                    return replaceValue(entry, value);
-                }
-            }
+        Objects.requireNonNull(value, "Use a non-null value");
+        int i = hash(key);
+        Entry<K, V> entry = entries[i];
+        if (entry == null) {
+            System.out.println("put");
+            entries[i] = new Entry<>(i, key, value, null, null);
+            count++;
+            return null;
         }
-        Map.Entry<K, V> newEntry = new Entry<>(key, value);
-        @SuppressWarnings("unchecked")
-        Map.Entry<K, V>[] newEntries = new Map.Entry[entries.length + 1];
-        long time = System.nanoTime();
-        System.arraycopy(entries, 0, newEntries, 0, entries.length);
-        entries = newEntries;
-        entries[entries.length - 1] = newEntry;
-        System.out.println(System.nanoTime() - time);
-        if (sortable) sort();
+        Entry<K, V> previousEntry = null;
+        while (entry != null) {
+            if (entry.key.equals(key)) {
+                System.out.println("swap values");
+                V oldValue = entry.value;
+                entry.value = value;
+                return oldValue;
+            }
+            previousEntry = entry;
+            entry = entry.next;
+        }
+        previousEntry.next = new Entry<>(i, key, value, null, previousEntry);
+        System.out.println("Collision put");
+        count++;
         return null;
     }
 
-    private int linearSearchIndex(Object key) {
-        for (int i = 0; i < entries.length; i++) {
-            if (entries[i].getKey().equals(key)) return i;
-        }
-        return -1;
+    private int hash(Object key) {
+        return key == null
+                ? 0
+                : hashFunction.apply(key) % capacity;
     }
 
-    private int binarySearchIndex(Object key) {
-        int hashKey = key.hashCode();
-        int low = 0;
-        int high = entries.length - 1;
-
-        while (low <= high) {
-            int mid = (low + high) >>> 1;
-            int midValue = entries[mid].getKey().hashCode();
-
-            if (midValue < hashKey)
-                low = mid + 1;
-            else if (midValue > hashKey)
-                high = mid - 1;
-            else
-                return mid;
-        }
-        return -(low + 1);
-    }
-
-    private int findIndex(Object key) {
-        return sorted
-                ? binarySearchIndex(key)
-                : linearSearchIndex(key);
-    }
 
     @Override
     public V remove(Object key) {
-        return isEmpty()
-                ? null
-                : removeByIndex(findIndex(key));
-    }
-
-    private V removeByIndex(int index) {
-        if (index < 0) return null;
-        V oldValue = entries[index].getValue();
-        @SuppressWarnings("unchecked")
-        Map.Entry<K, V>[] newEntries = new Map.Entry[entries.length - 1];
-        System.arraycopy(entries, 0, newEntries, 0, index);
-        System.arraycopy(entries, index + 1, newEntries, index, entries.length - index - 1);
-        entries = newEntries;
-        return oldValue;
+        // TODO
+        Entry<K, V> entry = entries[hash(key)];
+        Entry<K, V> previousEntry = null;
+        Entry<K, V> nextEntry = null;
+        while (entry != null) {
+            if (entry.key.equals(key)) {
+                previousEntry = entry.previous;
+                nextEntry = entry.next;
+                if (nextEntry != null) {
+                    nextEntry.previous = previousEntry;
+                }
+                if (previousEntry != null) {
+                    previousEntry.next = nextEntry;
+                }
+            }
+            entry = entry.next;
+        }
+        return null;
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) throws ClassCastException, NullPointerException {
-        if (this != m) m.forEach(this::put);
+        if (m == null) throw new NullPointerException();
+        if (this != m) {
+            for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
+                this.put(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void clear() {
-        sorted = false;
         entries = EMPTY_ENTRIES;
+        count = 0;
     }
 
     @Override
     public Set<K> keySet() {
+        // FIXME
         return keySet == null
                 ? keySet = new KeySet()
                 : keySet;
@@ -205,6 +169,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<V> values() {
+        // FIXME
         return keySet == null
                 ? values = new Values()
                 : values;
@@ -212,18 +177,25 @@ public class MyMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
+        // FIXME
         return entrySet == null
                 ? entrySet = new EntrySet()
                 : entrySet;
     }
 
     static final class Entry<K, V> implements Map.Entry<K, V> {
+        final int hash;
         final K key;
         V value;
+        Entry<K, V> next;
+        Entry<K, V> previous;
 
-        Entry(K key, V value) {
+        Entry(int hash, K key, V value, Entry<K, V> next, Entry<K, V> previous) {
+            this.hash = hash;
             this.key = key;
             this.value = value;
+            this.next = next;
+            this.previous = previous;
         }
 
         @Override
@@ -263,17 +235,6 @@ public class MyMap<K, V> implements Map<K, V> {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    class MyComparator implements Comparator<Map.Entry<K, V>> {
-        @Override
-        public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
-            if (o1.getKey() instanceof Comparable) {
-                return ((Comparable) o1.getKey()).compareTo(o2.getKey());
-            }
-            return o1.getKey().hashCode() - o2.getKey().hashCode();
-        }
-    }
-
     private final class MySpliterator<T> implements Spliterator<T> {
         private final int DEFAULT_CHARACTERISTIC = SIZED | SUBSIZED;
 
@@ -287,7 +248,7 @@ public class MyMap<K, V> implements Map<K, V> {
         }
 
         MySpliterator(Function<Map.Entry<K, V>, T> getter, int characteristic) {
-            this(0, entries.length, getter, characteristic);
+            this(0, MyMap.this.size(), getter, characteristic);
         }
 
         MySpliterator(int index, int fence, Function<Map.Entry<K, V>, T> getter, int characteristic) {
@@ -333,6 +294,7 @@ public class MyMap<K, V> implements Map<K, V> {
     }
 
     private abstract class MyIterator<T> implements Iterator<T> {
+        // TODO
         int index;
 
         MyIterator() {
@@ -353,7 +315,7 @@ public class MyMap<K, V> implements Map<K, V> {
 
         @Override
         public void remove() {
-            MyMap.this.removeByIndex(index - 1);
+            // FIXME MyMap.this.remove();
         }
     }
 

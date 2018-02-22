@@ -31,33 +31,36 @@ public class Person {
         return firstName;
     }
 
-    public void setFirstName(String firstName) {
+    public Person setFirstName(String firstName) {
         this.firstName = firstName;
+        return this;
     }
 
     public String getLastName() {
         return lastName;
     }
 
-    public void setLastName(String lastName) {
+    public Person setLastName(String lastName) {
         this.lastName = lastName;
+        return this;
     }
 
     public Gender getGender() {
         return gender;
     }
 
-    public void setGender(Gender gender) {
+    public Person setGender(Gender gender) {
         this.gender = gender;
+        return this;
     }
 
     public int getAge() {
-
         return age;
     }
 
-    public void setAge(int age) {
+    public Person setAge(int age) {
         this.age = age;
+        return this;
     }
 
     @Override

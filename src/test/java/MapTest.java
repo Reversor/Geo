@@ -14,7 +14,12 @@ public class MapTest extends Assert {
 
     @Before
     public void init() {
-        map = new MyMap<>(true);
+        map = new MyMap<>(500, 0.5f, (i) -> (i.hashCode() * 71 % 23));
+    }
+
+    @Test
+    public void put() {
+        long time = System.nanoTime();
         map.put(1, "Один");
         map.put(2, "Два");
         map.put(10, "Синхрофазатрон");
@@ -29,10 +34,7 @@ public class MapTest extends Assert {
         map.put(401211, "ответ");
         map.put(40151, "ответ");
         map.put(7_000_000, "семьлион");
-    }
-
-    @Test
-    public void put() {
+        System.out.println(System.nanoTime() - time);
         assertNull(map.put(4, "Три"));
         assertEquals("Три", map.put(4, "Четыре"));
         assertEquals("Четыре", map.get(4));
