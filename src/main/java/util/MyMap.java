@@ -1,5 +1,8 @@
 package util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -7,6 +10,7 @@ import java.util.function.Function;
 import static java.util.Spliterator.DISTINCT;
 
 public class MyMap<K, V> extends AbstractMap<K, V> {
+    private static final Logger LOG = LoggerFactory.getLogger("mymap");
 
     private static final int MAXIMUM_CAPACITY = 1 << 30;
     private static final int DEFAULT_INITIAL_CAPACITY = 1 << 10;
@@ -62,26 +66,15 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         return false;
     }
 
-    private Entry<K, V> getEntry(Object key) throws ClassCastException, NullPointerException {
+    @Override
+    public V get(Object key) {
         Entry<K, V> entry = entries[hash(key)];
         while (Objects.nonNull(entry)) {
             if (entry.key.equals(key)) {
-                return entry;
+                return entry.value;
             }
             entry = entry.next;
         }
-        return null;
-    }
-
-    @Override
-    public V get(Object key) {
-        Entry<K, V> entry = getEntry(key);
-        if (entry != null) return entry.value;
-        return null;
-    }
-
-    private V replaceValue(Entry<K, V> entry, V value) {
-        // FIXME
         return null;
     }
 
@@ -90,25 +83,15 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         Objects.requireNonNull(value, "Use a non-null value");
         int i = hash(key);
         Entry<K, V> entry = entries[i];
-        if (entry == null) {
-            System.out.println("put");
-            entries[i] = new Entry<>(i, key, value, null, null);
-            count++;
-            return null;
-        }
-        Entry<K, V> previousEntry = null;
         while (entry != null) {
             if (entry.key.equals(key)) {
-                System.out.println("swap values");
                 V oldValue = entry.value;
                 entry.value = value;
                 return oldValue;
             }
-            previousEntry = entry;
             entry = entry.next;
         }
-        previousEntry.next = new Entry<>(i, key, value, null, previousEntry);
-        System.out.println("Collision put");
+        entries[i] = new Entry<>(i, key, value, entries[i]);
         count++;
         return null;
     }
@@ -122,34 +105,24 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
     @Override
     public V remove(Object key) {
-        // TODO
-        Entry<K, V> entry = entries[hash(key)];
-        Entry<K, V> previousEntry = null;
-        Entry<K, V> nextEntry = null;
-        while (entry != null) {
-            if (entry.key.equals(key)) {
-                previousEntry = entry.previous;
-                nextEntry = entry.next;
-                if (nextEntry != null) {
-                    nextEntry.previous = previousEntry;
-                }
-                if (previousEntry != null) {
-                    previousEntry.next = nextEntry;
-                }
+        int i = hash(key);
+        Entry<K, V> entry = entries[i];
+        if (entry == null) return null;
+        if (entry.key.equals(key)) {
+            entries[i] = entry.next;
+            count--;
+            return entry.value;
+        }
+        while (entry.next != null) {
+            if (entry.next.key.equals(key)) {
+                Entry<K, V> removedEntry = entry.next;
+                entry.next = removedEntry.next;
+                count--;
+                return removedEntry.value;
             }
             entry = entry.next;
         }
         return null;
-    }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends V> m) throws ClassCastException, NullPointerException {
-        if (m == null) throw new NullPointerException();
-        if (this != m) {
-            for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
-                this.put(entry.getKey(), entry.getValue());
-            }
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -188,14 +161,12 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         final K key;
         V value;
         Entry<K, V> next;
-        Entry<K, V> previous;
 
-        Entry(int hash, K key, V value, Entry<K, V> next, Entry<K, V> previous) {
+        Entry(int hash, K key, V value, Entry<K, V> next) {
             this.hash = hash;
             this.key = key;
             this.value = value;
             this.next = next;
-            this.previous = previous;
         }
 
         @Override
