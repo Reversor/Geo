@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.MyMap;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,11 +15,8 @@ public class MapTest extends Assert {
 
     @Before
     public void init() {
-        map = new MyMap<>(500, 0.5f, (i) -> (i.hashCode() * 71 % 23));
-    }
-
-    @Test
-    public void put() {
+        map = new MyMap<>();
+//        map = new HashMap<>();
         long time = System.nanoTime();
         map.put(1, "Один");
         map.put(2, "Два");
@@ -35,6 +33,10 @@ public class MapTest extends Assert {
         map.put(40151, "ответ");
         map.put(7_000_000, "семьлион");
         System.out.println(System.nanoTime() - time);
+    }
+
+    @Test
+    public void put() {
         assertNull(map.put(4, "Три"));
         assertEquals("Три", map.put(4, "Четыре"));
         assertEquals("Четыре", map.get(4));
@@ -45,6 +47,9 @@ public class MapTest extends Assert {
     public void get() {
         assertNotNull(map.get(1));
         assertNull(map.get(3));
+        long time = System.nanoTime();
+        System.out.println(map.get(10));
+        System.out.println(System.nanoTime() - time);
     }
 
     @Test

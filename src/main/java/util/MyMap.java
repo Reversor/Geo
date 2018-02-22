@@ -20,7 +20,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     @SuppressWarnings("unchecked")
     private final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
 
-    private Entry<K, V>[] entries;
+    private Entry<K, V>[] table;
 
     private Function<Object, Integer> hashFunction;
 
@@ -34,18 +34,23 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     private Values values;
 
     @SuppressWarnings("unchecked")
-    public MyMap() {
-        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_HASH_FUNCTION);
+    public MyMap(int initialCapacity, float loadFactor, Function<Object, Integer> hashFunction) {
+        this.table = new Entry[initialCapacity];
+        this.capacity = initialCapacity;
+        this.loadFactor = loadFactor;
+        this.threshold = (int) (initialCapacity * loadFactor);
+        this.hashFunction = hashFunction == null ? DEFAULT_HASH_FUNCTION : hashFunction;
+        this.count = 0;
     }
 
     @SuppressWarnings("unchecked")
-    public MyMap(int capacity, float loadFactor, Function<Object, Integer> hashFunction) {
-        this.entries = new Entry[capacity];
-        this.capacity = capacity;
-        this.loadFactor = loadFactor;
-        this.threshold = (int) (capacity * loadFactor);
-        this.hashFunction = hashFunction == null ? DEFAULT_HASH_FUNCTION : hashFunction;
-        this.count = 0;
+    public MyMap(int initialCapacity, float loadFactor) {
+        this(initialCapacity, loadFactor, DEFAULT_HASH_FUNCTION);
+    }
+
+    @SuppressWarnings("unchecked")
+    public MyMap() {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_HASH_FUNCTION);
     }
 
     @Override
@@ -60,15 +65,21 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
     @Override
     public boolean containsValue(Object value) {
-        if (!isEmpty()) return false;
-
-
+        if (!isEmpty()) {
+            for (Entry<K, V> root : table) {
+                for (Entry<K, V> entry = root; entry != null; entry = entry.next) {
+                    if (entry.value == value
+                            || (value != null && entry.value.equals(value)))
+                        return true;
+                }
+            }
+        }
         return false;
     }
 
     @Override
     public V get(Object key) {
-        Entry<K, V> entry = entries[hash(key)];
+        Entry<K, V> entry = table[hash(key)];
         while (Objects.nonNull(entry)) {
             if (entry.key.equals(key)) {
                 return entry.value;
@@ -82,7 +93,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     public V put(K key, V value) throws NullPointerException {
         Objects.requireNonNull(value, "Use a non-null value");
         int i = hash(key);
-        Entry<K, V> entry = entries[i];
+        Entry<K, V> entry = table[i];
         while (entry != null) {
             if (entry.key.equals(key)) {
                 V oldValue = entry.value;
@@ -91,9 +102,13 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             }
             entry = entry.next;
         }
-        entries[i] = new Entry<>(i, key, value, entries[i]);
-        count++;
+        table[i] = new Entry<>(i, key, value, table[i]);
+        if (++count > threshold) resize();
         return null;
+    }
+
+    private void resize() {
+//        Arrays.copyOf(table, )
     }
 
     private int hash(Object key) {
@@ -106,10 +121,10 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     @Override
     public V remove(Object key) {
         int i = hash(key);
-        Entry<K, V> entry = entries[i];
+        Entry<K, V> entry = table[i];
         if (entry == null) return null;
         if (entry.key.equals(key)) {
-            entries[i] = entry.next;
+            table[i] = entry.next;
             count--;
             return entry.value;
         }
@@ -128,7 +143,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     @SuppressWarnings("unchecked")
     @Override
     public void clear() {
-        entries = EMPTY_ENTRIES;
+        table = EMPTY_ENTRIES;
         count = 0;
     }
 
@@ -234,7 +249,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             if (action == null)
                 throw new NullPointerException();
             if (index >= 0 && index < fence) {
-                action.accept(getter.apply(entries[index++]));
+                action.accept(getter.apply(table[index++]));
                 return true;
             }
             return false;
@@ -279,7 +294,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         Map.Entry<K, V> nextEntry() {
             if (hasNext()) {
-                return MyMap.this.entries[index++];
+                return MyMap.this.table[index++];
             }
             throw new NoSuchElementException();
         }
