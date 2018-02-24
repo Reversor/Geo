@@ -1,10 +1,8 @@
 import entity.Person;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.MyMap;
 import util.PersonGenerator;
 
 import java.util.HashMap;
@@ -19,7 +17,6 @@ public class PerformanceTest extends Assert {
 
     @Before
     public void init() {
-        myMap = new HashMap<>();
         avgTime = 0;
         personGenerator = new PersonGenerator();
     }
@@ -31,6 +28,7 @@ public class PerformanceTest extends Assert {
 
     @Test
     public void findMaxAge() {
+        myMap = new HashMap<>();
         testCount = 1_000;
         long time = 0;
         int size = 5_000_000;
@@ -50,19 +48,39 @@ public class PerformanceTest extends Assert {
 
     @Test
     public void put5MillionPersonToMap() {
-        testCount = 100;
+        testCount = 1;
         long time = 0;
         int size = 5_000_000;
         for (int c = 0; c <= testCount; c++) {
+            myMap = new MyMap<>(size, 1, null);
+//            myMap = new HashMap<>();
+            time = System.currentTimeMillis();
             for (int i = 0; i < size; i++) {
                 Person person = personGenerator.getNewPerson();
-                time = System.currentTimeMillis();
                 myMap.put(i, person);
-                avgTime += System.currentTimeMillis() - time;
             }
+            avgTime += System.currentTimeMillis() - time;
             assertEquals(size, myMap.size());
         }
         logger.info(Float.toString((float) avgTime / testCount));
+    }
+
+    @Test
+    @Ignore
+    public void some() {
+        int count = 512;
+        //System.out.println(count = -~count); // крайний изврат
+        System.out.println(count & (count - 1)); //power of two
+        System.out.println(1 << (int) StrictMath.log10(count)); // strange
+        int capacity = 5_000_000;
+        int n = capacity - 1;
+        n |= n >>> 1;
+        n |= n >>> 2;
+        n |= n >>> 4;
+        n |= n >>> 8;
+        n |= n >>> 16;
+        System.out.println(n + 1);
+        System.out.println(1 << 30);
     }
 
 }
