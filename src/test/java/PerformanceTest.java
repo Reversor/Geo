@@ -28,10 +28,10 @@ public class PerformanceTest extends Assert {
 
     @Test
     public void findMaxAge() {
-        myMap = new HashMap<>();
-        testCount = 1_000;
+        testCount = 1;
         long time = 0;
         int size = 5_000_000;
+        myMap = new MyMap<>(size, 1, null);
         for (int i = 0; i < size; i++) {
             Person person = personGenerator.getNewPerson();
             myMap.put(i, person);
@@ -52,7 +52,7 @@ public class PerformanceTest extends Assert {
         long time = 0;
         int size = 5_000_000;
         for (int c = 0; c <= testCount; c++) {
-            myMap = new MyMap<>(size, 1, null);
+            myMap = new MyMap<>(size, 1, key -> key.hashCode() ^ (key.hashCode() >>> 16));
 //            myMap = new HashMap<>();
             time = System.currentTimeMillis();
             for (int i = 0; i < size; i++) {
@@ -80,7 +80,13 @@ public class PerformanceTest extends Assert {
         n |= n >>> 8;
         n |= n >>> 16;
         System.out.println(n + 1);
+
+        int hash = personGenerator.getNewPerson().hashCode();
+        System.out.println(hash);
+        System.out.println(hash ^ hash >>> 16);
+        System.out.println((hash ^ hash >>> 16) ^ hash >>> 16); // yeah
         System.out.println(1 << 30);
+        System.out.println((1 << 31 - 1) - Integer.MAX_VALUE);
     }
 
 }

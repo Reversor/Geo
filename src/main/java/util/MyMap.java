@@ -1,21 +1,32 @@
 package util;
 
+import static java.util.Spliterator.DISTINCT;
+
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import static java.util.Spliterator.DISTINCT;
-
 public class MyMap<K, V> extends AbstractMap<K, V> {
+
     private static final Logger LOG = LoggerFactory.getLogger("mymap");
 
     private static final int MAXIMUM_CAPACITY = 1 << 30;
-    private static final int DEFAULT_INITIAL_CAPACITY = 1 << 10;
+    private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
     private static final float DEFAULT_LOAD_FACTOR = 0.5f;
-    private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = key -> key.hashCode() * 31;
+    private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = key -> key.hashCode()
+            * 31;
 
     @SuppressWarnings("unchecked")
     private final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
@@ -57,6 +68,21 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_HASH_FUNCTION);
     }
 
+    private Entry<K, V>[] resize() {
+        Entry<K, V>[] newTable;
+        int oldCapacity = capacity;
+        int oldThreshold = threshold;
+        if (oldCapacity >= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return table;
+        }
+        if (true) {
+
+        }
+        return table;
+
+    }
+
     private boolean isPowerOfTwo(int num) {
         return num != 0 && 0 == (num & (num - 1));
     }
@@ -69,6 +95,16 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         n |= n >>> 8;
         n |= n >>> 16;
         return n >= MAXIMUM_CAPACITY ? MAXIMUM_CAPACITY : n + 1;
+    }
+
+    private int hash(Object key) {
+        return key == null
+                ? 0
+                : hashFunction.apply(key);
+    }
+
+    private int index(int hash) {
+        return hash & (capacity - 1); // hash % capacity
     }
 
     @Override
@@ -87,8 +123,9 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             for (Entry<K, V> root : table) {
                 for (Entry<K, V> entry = root; entry != null; entry = entry.next) {
                     if (entry.value == value
-                            || (value != null && entry.value.equals(value)))
+                            || (value != null && entry.value.equals(value))) {
                         return true;
+                    }
                 }
             }
         }
@@ -122,30 +159,19 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             entry = entry.next;
         }
         table[i] = new Entry<>(hash, key, value, table[i]);
-        if (++count > threshold) resize();
+        if (++count > threshold) {
+            resize();
+        }
         return null;
-    }
-
-    private void resize() {
-//        Arrays.copyOf(table, )
-    }
-
-    private int hash(Object key) {
-        return key == null
-                ? 0
-                : hashFunction.apply(key);
-    }
-
-    // аналогично hash % capacity, когда capacity степень двойки
-    private int index(int hash) {
-        return hash & (capacity - 1);
     }
 
     @Override
     public V remove(Object key) {
         int i = index(hash(key));
         Entry<K, V> entry = table[i];
-        if (entry == null) return null;
+        if (entry == null) {
+            return null;
+        }
         if (entry.key.equals(key)) {
             table[i] = entry.next;
             count--;
@@ -163,8 +189,8 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public void clear() {
         table = EMPTY_ENTRIES;
         count = 0;
@@ -191,7 +217,8 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
                 : entrySet;
     }
 
-    static final class Entry<K, V> implements Map.Entry<K, V> {
+    private static final class Entry<K, V> implements Map.Entry<K, V> {
+
         final int hash;
         final K key;
         V value;
@@ -242,23 +269,31 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     }
 
     private final class MySpliterator<T> implements Spliterator<T> {
+
         private final int DEFAULT_CHARACTERISTIC = SIZED | SUBSIZED;
 
+        private final Function<Map.Entry<K, V>, T> getter;
         private final int fence;
         private final int characteristic;
-        private final Function<Map.Entry<K, V>, T> getter;
-        private int index;
+        Entry<K, V> current = null;
+        private int tableIndex;
+        private int mapIndex;
 
         MySpliterator(Function<Map.Entry<K, V>, T> getter) {
             this(getter, 0);
         }
 
         MySpliterator(Function<Map.Entry<K, V>, T> getter, int characteristic) {
-            this(0, MyMap.this.size(), getter, characteristic);
+            this(0, 0, table.length, getter, characteristic);
         }
 
-        MySpliterator(int index, int fence, Function<Map.Entry<K, V>, T> getter, int characteristic) {
-            this.index = index;
+        MySpliterator(int tableIndex, int mapIndex,
+                int fence,
+                Function<Map.Entry<K, V>, T> getter,
+                int characteristic) {
+            this.current = null;
+            this.tableIndex = tableIndex;
+            this.mapIndex = mapIndex;
             this.fence = fence;
             this.characteristic = DEFAULT_CHARACTERISTIC | characteristic;
             this.getter = getter;
@@ -266,26 +301,35 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
-            if (action == null)
+            if (action == null) {
                 throw new NullPointerException();
-            if (index >= 0 && index < fence) {
-                action.accept(getter.apply(table[index++]));
-                return true;
+            }
+            if (tableIndex >= 0 || tableIndex < fence && mapIndex < count) {
+                while (current != null || tableIndex < fence && mapIndex < count) {
+                    if (current == null) {
+                        current = table[tableIndex++];
+                    } else {
+                        action.accept(getter.apply(current));
+                        current = current.next;
+//                        mapIndex++;
+                        return true;
+                    }
+                }
             }
             return false;
         }
 
         @Override
         public Spliterator<T> trySplit() {
-            int mid = (index + fence) >>> 1;
-            return (index >= mid)
+            int mid = (tableIndex + fence) >>> 1;
+            return (tableIndex >= mid)
                     ? null
-                    : new MySpliterator<>(index, index = mid, getter, characteristic);
+                    : new MySpliterator<>(tableIndex, mapIndex, tableIndex = mid, getter, characteristic);
         }
 
         @Override
         public long estimateSize() {
-            return fence - index;
+            return fence - tableIndex;
         }
 
         @Override
@@ -300,12 +344,13 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     }
 
     private final class MyIterator<T> implements Iterator<T> {
+
         int index;
         Entry<K, V> current;
         Entry<K, V> next;
-        Function<Entry<K, V>, T> getter;
+        Function<Map.Entry<K, V>, T> getter;
 
-        MyIterator(Function<Entry<K, V>, T> getter) {
+        MyIterator(Function<Map.Entry<K, V>, T> getter) {
             this.getter = getter;
             index = 0;
             current = next = null;
@@ -343,7 +388,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public void remove() {
-            if (current == null){
+            if (current == null) {
                 throw new IllegalStateException();
             }
             MyMap.this.remove(current.key);
@@ -351,6 +396,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     }
 
     private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
+
         @Override
         public Iterator<Map.Entry<K, V>> iterator() {
             return new MyIterator<>(e -> e);
@@ -401,7 +447,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public Iterator<K> iterator() {
-            return new MyIterator<>(e -> e.key);
+            return new MyIterator<>(Map.Entry::getKey);
         }
 
         @Override
@@ -412,6 +458,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     }
 
     private class Values extends AbstractCollection<V> {
+
         @Override
         public final int size() {
             return MyMap.this.size();
@@ -424,7 +471,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public final Iterator<V> iterator() {
-            return new MyIterator<>(e -> e.value);
+            return new MyIterator<>(Map.Entry::getValue);
         }
 
         @Override

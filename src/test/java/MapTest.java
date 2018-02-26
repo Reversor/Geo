@@ -43,21 +43,22 @@ public class MapTest extends Assert {
     @Test
     public void remove() {
         int length = map.size();
+        assertNotNull(map.remove(1));
         assertNotNull(map.remove(5));
         assertNull(map.remove(5));
-        assertEquals(length - 1, map.size());
+        assertEquals(length - 2, map.size());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 0)
     @Ignore
     public void forEach() {
+//        map.entrySet().spliterator().forEachRemaining(System.out::println);
         map.entrySet().parallelStream()
                 .map(entry -> entry.getKey() + " " + entry.getValue())
-                .forEach((e) -> {
-                });
+                .forEach(System.out::println);
         assertFalse(
                 map.entrySet().parallelStream()
-                        .filter(entry -> !entry.getValue().equals("ответ"))
+                        .filter(entry -> entry.getValue().getGender() == Person.Gender.MALE)
                         .anyMatch(entry -> entry.getValue().equals("ответ"))
         );
         map.values().parallelStream()
@@ -68,7 +69,6 @@ public class MapTest extends Assert {
                 .filter(key -> key % 2 == 0)
                 .forEach((e) -> {
                 });
-
     }
 
     @Test
@@ -92,6 +92,7 @@ public class MapTest extends Assert {
         Set<Map.Entry<Integer, Person>> set = map.entrySet();
         assertTrue(set.remove(1));
         assertTrue(set.size() == map.size());
+        System.out.println(set);
     }
 
 }
