@@ -47,6 +47,10 @@ public class PersonGenerator {
     private Random random;
 
     public PersonGenerator() {
+        reset();
+    }
+
+    public void reset() {
         random = new Random(1);
     }
 

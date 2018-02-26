@@ -15,18 +15,13 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MyMap<K, V> extends AbstractMap<K, V> {
 
-    private static final Logger LOG = LoggerFactory.getLogger("mymap");
-
     private static final int MAXIMUM_CAPACITY = 1 << 30;
     private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
-    private static final float DEFAULT_LOAD_FACTOR = 0.5f;
-    private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = key -> key.hashCode()
-            * 31;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = k -> k.hashCode() * 31;
 
     @SuppressWarnings("unchecked")
     private final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
@@ -68,6 +63,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_HASH_FUNCTION);
     }
 
+    @SuppressWarnings("unchecked")
     private Entry<K, V>[] resize() {
         Entry<K, V>[] newTable;
         int oldCapacity = capacity;
@@ -76,11 +72,23 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             threshold = Integer.MAX_VALUE;
             return table;
         }
-        if (true) {
-
+        int newCapacity;
+        newCapacity = capacity << 1; // x2
+        threshold = (int) (newCapacity * loadFactor);
+        newTable = new Entry[newCapacity];
+        Entry<K, V> entry = null;
+        int index = 0;
+        int transfers = 0;
+        while (entry != null || (index < table.length) && (transfers < count)) {
+            if (entry == null) {
+                entry = table[index++];
+            } else {
+                newTable[index(entry.hash, newCapacity)] = entry;
+                entry = entry.next;
+            }
         }
-        return table;
-
+        capacity = newCapacity;
+        return newTable;
     }
 
     private boolean isPowerOfTwo(int num) {
@@ -94,7 +102,10 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         n |= n >>> 4;
         n |= n >>> 8;
         n |= n >>> 16;
-        return n >= MAXIMUM_CAPACITY ? MAXIMUM_CAPACITY : n + 1;
+        if (n < MAXIMUM_CAPACITY) {
+            return n + 1;
+        }
+        return MAXIMUM_CAPACITY;
     }
 
     private int hash(Object key) {
@@ -103,7 +114,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
                 : hashFunction.apply(key);
     }
 
-    private int index(int hash) {
+    private int index(int hash, int capacity) {
         return hash & (capacity - 1); // hash % capacity
     }
 
@@ -134,7 +145,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
     @Override
     public V get(Object key) {
-        Entry<K, V> entry = table[index(hash(key))];
+        Entry<K, V> entry = table[index(hash(key), capacity)];
         while (Objects.nonNull(entry)) {
             if (entry.key.equals(key)) {
                 return entry.value;
@@ -148,7 +159,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     public V put(K key, V value) throws NullPointerException {
         Objects.requireNonNull(value, "Use a non-null value");
         int hash = hash(key);
-        int i = index(hash);
+        int i = index(hash, capacity);
         Entry<K, V> entry = table[i];
         while (entry != null) {
             if (entry.key.equals(key)) {
@@ -160,14 +171,14 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         }
         table[i] = new Entry<>(hash, key, value, table[i]);
         if (++count > threshold) {
-            resize();
+            table = resize();
         }
         return null;
     }
 
     @Override
     public V remove(Object key) {
-        int i = index(hash(key));
+        int i = index(hash(key), capacity);
         Entry<K, V> entry = table[i];
         if (entry == null) {
             return null;
@@ -324,7 +335,8 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
             int mid = (tableIndex + fence) >>> 1;
             return (tableIndex >= mid)
                     ? null
-                    : new MySpliterator<>(tableIndex, mapIndex, tableIndex = mid, getter, characteristic);
+                    : new MySpliterator<>(tableIndex, mapIndex, tableIndex = mid, getter,
+                            characteristic);
         }
 
         @Override

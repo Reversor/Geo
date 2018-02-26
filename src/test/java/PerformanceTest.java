@@ -1,14 +1,18 @@
 import entity.Person;
-import org.junit.*;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.MyMap;
 import util.PersonGenerator;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class PerformanceTest extends Assert {
+
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private int testCount;
     private long avgTime;
@@ -28,8 +32,8 @@ public class PerformanceTest extends Assert {
 
     @Test
     public void findMaxAge() {
-        testCount = 1;
-        long time = 0;
+        testCount = 1_000;
+        long time;
         int size = 5_000_000;
         myMap = new MyMap<>(size, 1, null);
         for (int i = 0; i < size; i++) {
@@ -48,12 +52,14 @@ public class PerformanceTest extends Assert {
 
     @Test
     public void put5MillionPersonToMap() {
-        testCount = 1;
+        testCount = 100;
         long time = 0;
         int size = 5_000_000;
         for (int c = 0; c <= testCount; c++) {
-            myMap = new MyMap<>(size, 1, key -> key.hashCode() ^ (key.hashCode() >>> 16));
-//            myMap = new HashMap<>();
+//            myMap = new MyMap<>();
+//            myMap = new MyMap<>(size, 1, key -> key.hashCode() ^ (key.hashCode() >>> 16));
+            myMap = new HashMap<>();
+            personGenerator.reset();
             time = System.currentTimeMillis();
             for (int i = 0; i < size; i++) {
                 Person person = personGenerator.getNewPerson();

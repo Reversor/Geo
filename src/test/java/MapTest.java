@@ -12,16 +12,16 @@ import util.PersonGenerator;
 
 public class MapTest extends Assert {
 
-    private final Logger LOG = LoggerFactory.getLogger(this.getClass().getName());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    private final Person golovachLena = new Person("Лена", "Головач", Person.Gender.MALE, 20);
+    private final Person pilnikYana = new Person("Яна", "Пильник", Person.Gender.FEMALE, 40);
     private Map<Integer, Person> map;
-    private Person golovachLena = new Person("Лена", "Головач", Person.Gender.MALE, 20);
-    private Person pilnikYana = new Person("Яна", "Пильник", Person.Gender.FEMALE, 40);
 
     @Before
     public void init() {
         map = new MyMap<>();
         PersonGenerator personGenerator = new PersonGenerator();
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 50; i++) {
             map.put(i, personGenerator.getNewPerson());
         }
     }
@@ -31,13 +31,14 @@ public class MapTest extends Assert {
         assertNotNull(map.put(4, golovachLena));
         assertEquals(golovachLena, map.put(4, pilnikYana));
         assertEquals(pilnikYana, pilnikYana);
+        System.out.println(map);
 
     }
 
     @Test
     public void get() {
         assertNotNull(map.get(1));
-        assertNull(map.get(15));
+        assertNull(map.get(51));
     }
 
     @Test
