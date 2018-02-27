@@ -333,10 +333,11 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         @Override
         public Spliterator<T> trySplit() {
             int mid = (tableIndex + fence) >>> 1;
-            return (tableIndex >= mid)
-                    ? null
-                    : new MySpliterator<>(tableIndex, mapIndex, tableIndex = mid, getter,
-                            characteristic);
+            if (tableIndex >= mid || mapIndex + 1 >= count) {
+                return null;
+            }
+            return new MySpliterator<>(tableIndex, mapIndex, tableIndex = mid, getter,
+                    characteristic);
         }
 
         @Override
