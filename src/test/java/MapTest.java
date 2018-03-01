@@ -1,27 +1,24 @@
 import entity.Person;
 import entity.Person.Gender;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import util.MyMap;
 import util.PersonGenerator;
 
 public class MapTest extends Assert {
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
     private final Person golovachLena = new Person("Лена", "Головач", Person.Gender.MALE, 20);
     private final Person pilnikYana = new Person("Яна", "Пильник", Person.Gender.FEMALE, 40);
     private Map<Integer, Person> map;
 
     @Before
     public void init() {
-        map = new MyMap<>();
+        map = new HashMap<>();
         PersonGenerator personGenerator = new PersonGenerator();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 5_000_000; i++) {
             map.put(i, personGenerator.getNewPerson());
         }
     }
@@ -30,15 +27,15 @@ public class MapTest extends Assert {
     public void put() {
         assertNotNull(map.put(4, golovachLena));
         assertEquals(golovachLena, map.put(4, pilnikYana));
-        assertEquals(pilnikYana, pilnikYana);
-        System.out.println(map);
-
+        assertEquals(pilnikYana, map.get(4));
+//        System.out.println(map);
+        assertEquals(5_000_000, map.size());
     }
 
     @Test
     public void get() {
         assertNotNull(map.get(1));
-        assertNull(map.get(51));
+        assertNull(map.get(5_000_001));
     }
 
     @Test
@@ -50,29 +47,35 @@ public class MapTest extends Assert {
         assertEquals(length - 2, map.size());
     }
 
-    @Test(timeout = 1_000)
+    @Test(timeout = 20_000)
     public void forEach() {
+        long time = System.currentTimeMillis();
         map.entrySet().spliterator().forEachRemaining((entry) -> {
         });
-        map.entrySet().parallelStream()
+        System.out.println(System.currentTimeMillis() - time);
+        time = System.currentTimeMillis();
+        map.entrySet().stream()//.parallel()
                 .map(entry -> entry.getKey() + " " + entry.getValue())
                 .forEach((entry) -> {
                 });
+        System.out.println(System.currentTimeMillis() - time);
+        time = System.currentTimeMillis();
         assertFalse(
-                map.entrySet().parallelStream()
+                map.entrySet().stream()//.parallel()
                         .filter(entry -> entry.getValue().getGender() == Person.Gender.MALE)
                         .anyMatch(entry -> entry.getValue().getGender() == Gender.FEMALE)
         );
-        map.values().parallelStream()
+        System.out.println(System.currentTimeMillis() - time);
+        time = System.currentTimeMillis();
+        map.values().stream()//.parallel()
                 .filter(value -> value.getAge() > 50)
-                .forEach((value) -> {
-                    assertTrue(value.getAge() > 50);
-                });
-        map.keySet().parallelStream()
+                .forEach(value -> assertTrue(value.getAge() > 50));
+        System.out.println(System.currentTimeMillis() - time);
+        time = System.currentTimeMillis();
+        map.keySet().stream()//.parallel()
                 .filter(key -> key % 2 == 0)
-                .forEach((k) -> {
-                    assertFalse(k % 2 == 1);
-                });
+                .forEach(k -> assertFalse(k % 2 == 1));
+        System.out.println(System.currentTimeMillis() - time);
     }
 
     @Test
@@ -96,5 +99,4 @@ public class MapTest extends Assert {
         assertTrue(set.remove(1));
         assertTrue(set.size() == map.size());
     }
-
 }

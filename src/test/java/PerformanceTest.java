@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import util.MyMap;
 import util.PersonGenerator;
 
+@Ignore
 public class PerformanceTest extends Assert {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());

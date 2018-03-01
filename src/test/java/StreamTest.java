@@ -10,12 +10,14 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.MyMap;
 import util.PersonGenerator;
 
+@Ignore
 public class StreamTest extends Assert {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());

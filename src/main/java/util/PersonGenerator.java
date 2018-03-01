@@ -5,7 +5,7 @@ import entity.Person;
 import java.util.Random;
 
 public class PersonGenerator {
-    private final String[] MALE_NAMES = new String[]{
+    private static final String[] MALE_NAMES = new String[]{
             "Alexander",
             "Maxim",
             "Ivan",
@@ -17,7 +17,7 @@ public class PersonGenerator {
             "Mihail",
             "Andrey"
     };
-    private final String[] FEMALE_NAMES = new String[]{
+    private static final String[] FEMALE_NAMES = new String[]{
             "Anastasia",
             "Maria",
             "Daria",
@@ -29,7 +29,7 @@ public class PersonGenerator {
             "Sofia",
             "Alexandra"
     };
-    private final String[] LAST_NAMES = new String[]{
+    private static final String[] LAST_NAMES = new String[]{
             "Smirnov", "Ivanov", "Kuznetsov", "Sokolov",
             "Popov", "Lebedev", "Kozlov", "Novikov",
             "Morozov", "Petrov", "Volkov", "Soloviev",
@@ -44,14 +44,22 @@ public class PersonGenerator {
             "Zakharov", "Borisov", "Korolev", "Gerasimov",
             "Ponomarev", "Grigoryev", "Zhikharev", "Nikulin"
     };
+
     private Random random;
+    private int seed;
 
     public PersonGenerator() {
         reset();
     }
 
     public void reset() {
-        random = new Random(1);
+        this.seed = 1;
+        random = new Random(seed);
+    }
+
+    public void setSeed(int seed) {
+        this.seed = seed;
+        random.setSeed(this.seed);
     }
 
     public Person getNewPerson() {

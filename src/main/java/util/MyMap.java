@@ -24,7 +24,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
     private static final Function<Object, Integer> DEFAULT_HASH_FUNCTION = k -> k.hashCode() * 31;
 
     @SuppressWarnings("unchecked")
-    private final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
+    private static final Entry[] EMPTY_ENTRIES = new Entry[DEFAULT_INITIAL_CAPACITY];
 
     private Entry<K, V>[] table;
 
@@ -41,7 +41,8 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
     @SuppressWarnings("unchecked")
     public MyMap(int initialCapacity, float loadFactor, Function<Object, Integer> hashFunction) {
-        if (isPowerOfTwo(initialCapacity)) {
+        // check initial capacity to power of two
+        if (initialCapacity != 0 && 0 == (initialCapacity & (initialCapacity - 1))) {
             this.capacity = initialCapacity;
         } else {
             this.capacity = roundingToPowerOfTwo(initialCapacity);
@@ -89,10 +90,6 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
         }
         capacity = newCapacity;
         return newTable;
-    }
-
-    private boolean isPowerOfTwo(int num) {
-        return num != 0 && 0 == (num & (num - 1));
     }
 
     private int roundingToPowerOfTwo(int capacity) {
@@ -322,12 +319,32 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
                     } else {
                         action.accept(getter.apply(current));
                         current = current.next;
-//                        mapIndex++;
+                        ++mapIndex;
                         return true;
                     }
                 }
             }
             return false;
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super T> action) {
+            if (action == null) {
+                throw new NullPointerException();
+            }
+            int ti = tableIndex;
+            int mi = mapIndex;
+            while (current != null || ti < fence && mi < count) {
+                if (current == null) {
+                    current = table[ti++];
+                } else {
+                    action.accept(getter.apply(current));
+                    current = current.next;
+                    mi++;
+                }
+            }
+//            do {
+//            } while (tryAdvance(action));
         }
 
         @Override
