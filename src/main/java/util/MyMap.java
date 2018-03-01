@@ -1,7 +1,5 @@
 package util;
 
-import static java.util.Spliterator.DISTINCT;
-
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -439,7 +437,14 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public boolean remove(Object o) {
-            return MyMap.this.remove(o) != null;
+            if (o instanceof Map.Entry) {
+                Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
+                Object key = e.getKey();
+                Object value = e.getValue();
+                removeIf(current -> current.getKey().equals(key) && current.getValue()
+                        .equals(value));
+            }
+            return false;
         }
 
         @Override
@@ -472,7 +477,7 @@ public class MyMap<K, V> extends AbstractMap<K, V> {
 
         @Override
         public Spliterator<K> spliterator() {
-            return new MySpliterator<>(Map.Entry::getKey, DISTINCT);
+            return new MySpliterator<>(Map.Entry::getKey, Spliterator.DISTINCT);
         }
 
         @Override

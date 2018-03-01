@@ -96,7 +96,7 @@ public class MapTest extends Assert {
     public void entrySet() {
         assertNotNull(map.entrySet());
         Set<Map.Entry<Integer, Person>> set = map.entrySet();
-        assertTrue(set.remove(1));
+        assertFalse(set.remove(golovachLena));
         assertTrue(set.size() == map.size());
     }
 }
